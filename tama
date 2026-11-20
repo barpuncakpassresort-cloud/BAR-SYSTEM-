@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BAR DEPARTMENT PUNCAK PASS RESORT</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gold: '#D4AF37',
+                        resortDark: '#111827'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS & jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 transition-colors duration-200 min-h-screen">
+
+    <!-- Header Navigation -->
+    <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-yellow-600 flex items-center justify-center font-bold text-white shadow-md">
+                    PPR
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-wide">BAR DEPARTMENT</h1>
+                    <p class="text-xs text-yellow-600 font-semibold tracking-wider">PUNCAK PASS RESORT</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <!-- Theme Toggle Button -->
+                <button onclick="toggleTheme()" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block text-yellow-400"></i>
+                    <i data-lucide="moon" class="w-5 h-5 block dark:hidden text-gray-600"></i>
+                </button>
+                
+                <!-- Email Status Badge -->
+                <div class="hidden md:flex items-center space-x-1.5 text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-3 py-1.5 rounded-full border border-emerald-300 dark:border-emerald-700">
+                    <i data-lucide="mail" class="w-3.5 h-3.5"></i>
+                    <span>barpuncakpassresort@gmail.com</span>
+                </div>
+
+                <!-- Admin Status -->
+                <span id="roleBadge" class="px-2.5 py-1 text-xs font-semibold rounded bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300">
+                    Admin Access
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+
+        <!-- Nav Tabs -->
+        <div class="flex flex-wrap gap-2 mb-6 border-b border-gray-200 dark:border-gray-700 pb-3">
+            <button onclick="switchTab('pos')" id="tab-pos" class="tab-btn px-4 py-2 rounded-lg font-medium text-sm flex items-center space-x-2 bg-yellow-600 text-white shadow">
+                <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                <span>Penjualan & Kasir</span>
+            </button>
+            <button onclick="switchTab('inventory')" id="tab-inventory" class="tab-btn px-4 py-2 rounded-lg font-medium text-sm flex items-center space-x-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <i data-lucide="boxes" class="w-4 h-4"></i>
+                <span>Stok Opname & Par Stock</span>
+            </button>
+            <button onclick="switchTab('report')" id="tab-report" class="tab-btn px-4 py-2 rounded-lg font-medium text-sm flex items-center space-x-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>Laporan Shift & Kirim Email</span>
+            </button>
+        </div>
+
+        <!-- Section 1: Kasir POS -->
+        <section id="sec-pos" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Catalog Menu -->
+                <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="font-bold text-lg flex items-center gap-2">
+                            <i data-lucide="cup-soda" class="text-yellow-600"></i> Standar Menu Bar
+                        </h2>
+                        <span class="text-xs text-gray-500">*Belum termasuk 10% Service & 11% Pajak</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="menuContainer">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+
+                <!-- Transaction Summary Cart -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-base border-b pb-3 dark:border-gray-700 flex items-center gap-2">
+                            <i data-lucide="receipt"></i> Detail Pesanan
+                        </h3>
+                        <div id="cartItems" class="py-4 space-y-3 min-h-[180px] max-h-[300px] overflow-y-auto">
+                            <p class="text-sm text-gray-400 text-center py-8">Belum ada item dipilih</p>
+                        </div>
+                    </div>
+
+                    <div class="border-t pt-4 dark:border-gray-700 space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Subtotal</span>
+                            <span id="subtotalVal" class="font-medium">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Service Charge (10%)</span>
+                            <span id="serviceVal" class="font-medium text-yellow-600">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Pajak / Tax (11%)</span>
+                            <span id="taxVal" class="font-medium text-yellow-600">Rp 0</span>
+                        </div>
+                        <div class="flex justify-between text-base font-bold border-t pt-2 dark:border-gray-700 text-gray-900 dark:text-white">
+                            <span>Total Akhir</span>
+                            <span id="grandTotalVal" class="text-emerald-600 dark:text-emerald-400">Rp 0</span>
+                        </div>
+                        <button onclick="processOrder()" class="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2 shadow">
+                            <i data-lucide="check-circle"></i> Simpan & Potong Stok Resep
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Stok Opname & Par Stock -->
+        <section id="sec-inventory" class="hidden space-y-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="font-bold text-lg flex items-center gap-2">
+                            <i data-lucide="boxes" class="text-yellow-600"></i> Monitoring Stok Opname & Par Stock
+                        </h2>
+                        <p class="text-xs text-gray-500">Sistem memberikan indikasi otomatis jika stok di bawah Par Stock minimum</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="exportToExcel()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export Excel
+                        </button>
+                        <button onclick="exportToPDF()" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition">
+                            <i data-lucide="file-text" class="w-4 h-4"></i> Export PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left border-collapse">
+                        <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300">
+                            <tr>
+                                <th class="py-3 px-4">Nama Item Inventory</th>
+                                <th class="py-3 px-4 text-center">Stok Saat Ini</th>
+                                <th class="py-3 px-4 text-center">Par Stock Standar</th>
+                                <th class="py-3 px-4 text-center">Satuan</th>
+                                <th class="py-3 px-4 text-center">Status Stok</th>
+                                <th class="py-3 px-4 text-right">Aksi Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody" class="divide-y divide-gray-200 dark:divide-gray-700">
+                            <!-- Loaded dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Laporan Harian, Upload Foto & Email -->
+        <section id="sec-report" class="hidden space-y-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700 max-w-2xl mx-auto">
+                <h2 class="font-bold text-lg mb-4 flex items-center gap-2">
+                    <i data-lucide="mail-check" class="text-yellow-600"></i> Pengiriman Laporan Harian Shift
+                </h2>
+
+                <form onsubmit="sendReportEmail(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-medium mb-1">Nama Petugas Shift</label>
+                        <input type="text" id="staffName" required class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm" placeholder="Nama Barista / Staff">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium mb-1">Pilih Shift</label>
+                        <select id="shiftSelect" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm">
+                            <option value="Morning Shift (07:00 - 15:00)">Morning Shift (07:00 - 15:00)</option>
+                            <option value="Evening Shift (15:00 - 23:00)">Evening Shift (15:00 - 23:00)</option>
+                            <option value="Full Day Shift">Full Day Shift</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium mb-1">Catatan Operasional / Handover</label>
+                        <textarea id="reportNotes" rows="3" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent px-3 py-2 text-sm" placeholder="Spill, barang pecah, atau catatan penambahan stok harian..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium mb-1">Upload Foto Bukti Operasional / Penambahan Stok</label>
+                        <input type="file" id="photoInput" accept="image/*" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-yellow-50 dark:file:bg-gray-700 file:text-yellow-700 dark:file:text-yellow-400">
+                    </div>
+
+                    <div class="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg border border-gray-200 dark:border-gray-700 text-xs space-y-1">
+                        <div class="font-semibold text-gray-600 dark:text-gray-300">Tujuan Email:</div>
+                        <div class="text-yellow-600 font-bold">barpuncakpassresort@gmail.com</div>
+                    </div>
+
+                    <button type="submit" id="btnSubmitReport" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2 shadow">
+                        <i data-lucide="send"></i> Kirim Laporan Lengkap ke Email
+                    </button>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        function toggleTheme() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function switchTab(tabName) {
+            ['pos', 'inventory', 'report'].forEach(t => {
+                document.getElementById(`sec-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).className = 'tab-btn px-4 py-2 rounded-lg font-medium text-sm flex items-center space-x-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700';
+            });
+            document.getElementById(`sec-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).className = 'tab-btn active px-4 py-2 rounded-lg font-medium text-sm flex items-center space-x-2 bg-yellow-600 text-white shadow';
+        }
+
+        let menuData = [];
+        let inventoryData = [];
+        let cart = [];
+        let grandTotalShift = 0;
+
+        // Initialize App Data from Google Apps Script
+        window.onload = function() {
+            google.script.run.withSuccessHandler(data => {
+                inventoryData = data;
+                renderInventory();
+            }).getInitialInventory();
+
+            google.script.run.withSuccessHandler(data => {
+                menuData = data;
+                renderMenu();
+            }).getMenuItems();
+        };
+
+        function renderMenu() {
+            const container = document.getElementById('menuContainer');
+            container.innerHTML = menuData.map(item => `
+                <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 flex justify-between items-center bg-gray-50 dark:bg-gray-700/30">
+                    <div>
+                        <div class="font-bold text-sm text-gray-900 dark:text-gray-100">${item.name}</div>
+                        <div class="text-xs text-yellow-600 font-medium">Rp ${item.price.toLocaleString('id-ID')}</div>
+                        <span class="text-[10px] bg-gray-200 dark:bg-gray-600 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-300">${item.category}</span>
+                    </div>
+                    <button onclick="addToCart(${item.id})" class="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md text-xs font-semibold shadow">
+                        + Tambah
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(id) {
+            const item = menuData.find(m => m.id === id);
+            const exist = cart.find(c => c.id === id);
+            if(exist) {
+                exist.qty += 1;
+            } else {
+                cart.push({ ...item, qty: 1 });
+            }
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const cartContainer = document.getElementById('cartItems');
+            if(cart.length === 0) {
+                cartContainer.innerHTML = `<p class="text-sm text-gray-400 text-center py-8">Belum ada item dipilih</p>`;
+                document.getElementById('subtotalVal').innerText = 'Rp 0';
+                document.getElementById('serviceVal').innerText = 'Rp 0';
+                document.getElementById('taxVal').innerText = 'Rp 0';
+                document.getElementById('grandTotalVal').innerText = 'Rp 0';
+                return;
+            }
+
+            let subtotal = 0;
+            cartContainer.innerHTML = cart.map(item => {
+                const itemTotal = item.price * item.qty;
+                subtotal += itemTotal;
+                return `
+                    <div class="flex justify-between items-center text-xs">
+                        <div>
+                            <span class="font-bold">${item.name}</span>
+                            <div class="text-gray-400">${item.qty} x Rp ${item.price.toLocaleString('id-ID')}</div>
+                        </div>
+                        <span class="font-semibold">Rp ${itemTotal.toLocaleString('id-ID')}</span>
+                    </div>
+                `;
+            }).join('');
+
+            const service = subtotal * 0.10; // 10% Service Charge
+            const tax = subtotal * 0.11; // 11% Tax
+            const grandTotal = subtotal + service + tax;
+            grandTotalShift += grandTotal;
+
+            document.getElementById('subtotalVal').innerText = `Rp ${subtotal.toLocaleString('id-ID')}`;
+            document.getElementById('serviceVal').innerText = `Rp ${service.toLocaleString('id-ID')}`;
+            document.getElementById('taxVal').innerText = `Rp ${tax.toLocaleString('id-ID')}`;
+            document.getElementById('grandTotalVal').innerText = `Rp ${grandTotal.toLocaleString('id-ID')}`;
+        }
+
+        function processOrder() {
+            if(cart.length === 0) return alert('Pilih menu terlebih dahulu!');
+
+            cart.forEach(cartItem => {
+                if(cartItem.recipe) {
+                    for (let ingredient in cartItem.recipe) {
+                        let invItem = inventoryData.find(i => i.item_name === ingredient);
+                        if(invItem) {
+                            invItem.current_stock = Math.max(0, invItem.current_stock - (cartItem.recipe[ingredient] * cartItem.qty));
+                        }
+                    }
+                }
+            });
+
+            alert('Transaksi Berhasil! Stok bahan baku terpotong otomatis.');
+            cart = [];
+            updateCartUI();
+            renderInventory();
+        }
+
+        function renderInventory() {
+            const tbody = document.getElementById('inventoryTableBody');
+            tbody.innerHTML = inventoryData.map(item => {
+                const isLow = item.current_stock < item.par_stock;
+                return `
+                    <tr class="border-b dark:border-gray-700 hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
+                        <td class="py-3 px-4 font-medium">${item.item_name}</td>
+                        <td class="py-3 px-4 text-center font-bold ${isLow ? 'text-red-500' : 'text-emerald-600'}">${item.current_stock.toFixed(2)}</td>
+                        <td class="py-3 px-4 text-center text-gray-500">${item.par_stock}</td>
+                        <td class="py-3 px-4 text-center text-xs text-gray-400">${item.unit}</td>
+                        <td class="py-3 px-4 text-center">
+                            ${isLow ? `<span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">Di Bawah Par Stock</span>` : `<span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">Stok Aman</span>`}
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <button onclick="editStock('${item.item_name}')" class="text-xs bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 px-2 py-1 rounded">Edit Stok</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function editStock(name) {
+            let val = prompt(`Edit nilai stok untuk ${name}:`);
+            if(val && !isNaN(val)) {
+                let item = inventoryData.find(i => i.item_name === name);
+                if(item) {
+                    item.current_stock = parseFloat(val);
+                    renderInventory();
+                }
+            }
+        }
+
+        function exportToExcel() {
+            const ws = XLSX.utils.json_to_sheet(inventoryData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Stok Opname");
+            XLSX.writeFile(wb, "Stok_Opname_Puncak_Pass_Resort.xlsx");
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text("BAR DEPARTMENT PUNCAK PASS RESORT", 14, 15);
+            doc.text("Laporan Stok Opname & Par Stock", 14, 25);
+            let y = 35;
+            inventoryData.forEach((item, idx) => {
+                doc.text(`${idx + 1}. ${item.item_name} | Stok: ${item.current_stock} ${item.unit} (Par: ${item.par_stock})`, 14, y);
+                y += 8;
+            });
+            doc.save("Stok_Opname_Puncak_Pass_Resort.pdf");
+        }
+
+        function sendReportEmail(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmitReport');
+            btn.disabled = true;
+            btn.innerText = "Mengirim...";
+
+            const fileInput = document.getElementById('photoInput');
+            const file = fileInput.files[0];
+
+            const payload = {
+                staffName: document.getElementById('staffName').value,
+                shiftName: document.getElementById('shiftSelect').value,
+                notes: document.getElementById('reportNotes').value,
+                grandTotal: grandTotalShift,
+                photoBase64: null
+            };
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    payload.photoBase64 = evt.target.result;
+                    google.script.run.withSuccessHandler(res => {
+                        alert(res.message);
+                        btn.disabled = false;
+                        btn.innerHTML = `<i data-lucide="send"></i> Kirim Laporan Lengkap ke Email`;
+                    }).sendReportViaEmail(payload);
+                };
+                reader.readAsDataURL(file);
+            } else {
+                google.script.run.withSuccessHandler(res => {
+                    alert(res.message);
+                    btn.disabled = false;
+                    btn.innerHTML = `<i data-lucide="send"></i> Kirim Laporan Lengkap ke Email`;
+                }).sendReportViaEmail(payload);
+            }
+        }
+    </script>
+</body>
+</html>
